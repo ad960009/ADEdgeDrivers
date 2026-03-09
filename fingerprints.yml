@@ -1,0 +1,6 @@
+zigbeeManufacturer:
+  - id: "tuya_test_device"
+    deviceLabel: "Tuya Test Device"
+    manufacturer: "TUYA_MANUFACTURER_ID" # 나중에 실제 기기 값으로 바꿀 겁니다.
+    model: "TUYA_MODEL_ID"               # 나중에 실제 기기 값으로 바꿀 겁니다.
+    deviceProfileName: "test-profile"    # 나중에 프로파일을 만들면 연결할 이름입니다.

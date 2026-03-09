@@ -1,0 +1,4 @@
+name: "My First Tuya Driver"
+packageKey: "my.first.tuya.driver"
+permissions:
+  zigbee: {}
