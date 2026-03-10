@@ -49,6 +49,20 @@ local parsers = {
   humidity = function(device, value)
     device:emit_event(capabilities.relativeHumidityMeasurement.humidity({value = value}))
   end
+
+  battery_state_enum = function(device, value)
+    local pct = 100
+    if value == 0 then
+      pct = 10  -- 배터리 없음 (Low)
+    elseif value == 1 then
+      pct = 50  -- 배터리 절반 (Medium)
+    elseif value == 2 then
+      pct = 100 -- 배터리 충분 (High)
+    end
+
+    device:emit_event(capabilities.battery.battery({value = pct}))
+    log.info("🔋 앱 업데이트: 배터리 상태(" .. value .. ") -> " .. pct .. "% 로 변환")
+  end
 }
 
 -- ====================================================================
@@ -90,7 +104,7 @@ local DEVICE_PROFILES = {
   ["_TZE204_yjjdcqsq"] = {
     [1] = parsers.temperature,
     [2] = parsers.humidity,
-    -- 이 모델은 Z2M 코드상 raw 배터리 DP가 명확하지 않아 일단 온습도만 맵핑
+    [3] = parsers.battery_state_enum
   }
 }
 
