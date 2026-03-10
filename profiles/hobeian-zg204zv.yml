@@ -4,13 +4,15 @@ components:
     capabilities:
       - id: presenceSensor           # 재실
         version: 1
-      - id: illuminanceMeasurement   # 조도
-        version: 1
       - id: temperatureMeasurement   # 온도
         version: 1
       - id: relativeHumidityMeasurement # 습도
         version: 1
       - id: battery                  # 배터리
         version: 1
+      - id: illuminanceMeasurement   # 조도
+        version: 1
+      - id: firmwareUpdate
+        version: 1
     categories:
-      - name: MultiFunctionalSensor  # 다기능 센서 아이콘
+      - name: PresenceSensor

@@ -22,7 +22,6 @@ local parsers = {
   presence_complex = function(device, value)
     if value == 1 or value == 2 then
       device:emit_event(capabilities.presenceSensor.presence.present())
-      -- 참고: 1(존재)과 2(움직임)를 앱에 다르게 띄우려면 커스텀 capability가 필요하므로 일단 present로 통일합니다.
     else
       device:emit_event(capabilities.presenceSensor.presence.not_present())
     end
@@ -48,8 +47,9 @@ local parsers = {
   -- 습도 (값 그대로)
   humidity = function(device, value)
     device:emit_event(capabilities.relativeHumidityMeasurement.humidity({value = value}))
-  end
+  end, -- ✅ 콤마 추가됨!
 
+  -- 배터리 상태 (0, 1, 2)
   battery_state_enum = function(device, value)
     local pct = 100
     if value == 0 then
@@ -62,11 +62,11 @@ local parsers = {
 
     device:emit_event(capabilities.battery.battery({value = pct}))
     log.info("🔋 앱 업데이트: 배터리 상태(" .. value .. ") -> " .. pct .. "% 로 변환")
-  end
+  end,
 }
 
 -- ====================================================================
--- 2. 기기별 DP 매핑 사전 (여기에 기기 정보를 계속 추가하면 됩니다!)
+-- 2. 기기별 DP 매핑 사전
 -- ====================================================================
 
 local DEVICE_PROFILES = {
@@ -88,16 +88,15 @@ local DEVICE_PROFILES = {
 
   -- 3. 🆕 ZY-M100-24GV3 (복합 모션 센서)
   ["_TZE200_ya4ft0w4"] = {
-    [1]   = parsers.presence_complex, -- 상태가 0, 1, 2로 들어옴
+    [1]   = parsers.presence_complex,
     [103] = parsers.illuminance
-    -- (거리, 민감도 등은 나중에 preference로 제어하기 위해 일단 정보 표시용만 등록)
-  }
+  }, -- ✅ 콤마 추가됨!
 
   -- 4. Tuya 온습도 센서 (ZTH05Z)
   ["_TZE200_vvmbj46n"] = {
     [1] = parsers.temperature,
     [2] = parsers.humidity,
-    [4] = parsers.battery  -- Z2M 코드에 4번이 배터리(raw)로 되어 있음
+    [4] = parsers.battery
   },
 
   -- 5. Tuya 온습도 센서 (ZTH01)
@@ -105,7 +104,7 @@ local DEVICE_PROFILES = {
     [1] = parsers.temperature,
     [2] = parsers.humidity,
     [3] = parsers.battery_state_enum
-  }
+  },
 }
 
 -- ====================================================================
@@ -125,23 +124,22 @@ local function tuya_handler(driver, device, zb_rx)
     data_value = string.byte(rx_body, 7)
   elseif dp_type == 0x02 and data_length == 4 then
     data_value = (string.byte(rx_body, 7) * 16777216) + (string.byte(rx_body, 8) * 65536) + (string.byte(rx_body, 9) * 256) + string.byte(rx_body, 10)
-  elseif dp_type == 0x04 then -- Enum 타입 (ZY-M100의 상태값 등에 사용됨)
+  elseif dp_type == 0x04 then
     data_value = string.byte(rx_body, 7)
   end
 
   log.info(string.format("📡 [수신] 기기: %s | DP_ID: %d | Type: %d | Value: %d", device.manufacturer, dp_id, dp_type, data_value))
 
-  -- 사전에서 이 기기의 제조사 코드를 찾음
   local profile = DEVICE_PROFILES[device.manufacturer]
 
   if profile then
-    -- 사전에서 DP_ID에 해당하는 파싱 함수를 찾음
     local parser_func = profile[dp_id]
     if parser_func then
-      -- 함수 실행!
       parser_func(device, data_value)
     else
-      log.warn("⚠️ 이 기기(DP: " .. dp_id .. ")의 처리 방법이 정의되지 않았습니다.")
+      local unknown_log = string.format("DP:%d=Val:%d", dp_id, data_value)
+      log.warn("⚠️ 미등록 데이터 포착: " .. unknown_log)
+      device:emit_event(capabilities.firmwareUpdate.currentVersion({value = unknown_log}))
     end
   else
     log.warn("⚠️ 사전에 등록되지 않은 기기입니다: " .. tostring(device.manufacturer))
@@ -158,7 +156,8 @@ local tuya_driver = ZigbeeDriver("ad_tuya_driver", {
     capabilities.illuminanceMeasurement,
     capabilities.battery,
     capabilities.temperatureMeasurement,
-    capabilities.relativeHumidityMeasurement
+    capabilities.relativeHumidityMeasurement,
+    capabilities.firmwareUpdate
   },
   zigbee_handlers = {
     cluster = {
@@ -168,7 +167,7 @@ local tuya_driver = ZigbeeDriver("ad_tuya_driver", {
         [0x24] = tuya_handler
       }
     }
-  }
+  },
 })
 
 log.info("🚀 AD Tuya 통합 드라이버 (구조화 버전) 실행 완료!")

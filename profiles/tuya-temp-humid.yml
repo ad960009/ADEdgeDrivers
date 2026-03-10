@@ -8,5 +8,7 @@ components:
         version: 1
       - id: battery                  # 👈 배터리
         version: 1
+      - id: firmwareUpdate
+        version: 1
     categories:
-      - name: TemperatureMeasurement # 카테고리를 명확히 지정!
+      - name: TempHumiditySensor
