@@ -78,6 +78,20 @@ local DEVICE_PROFILES = {
     [103] = parsers.illuminance
     -- (거리, 민감도 등은 나중에 preference로 제어하기 위해 일단 정보 표시용만 등록)
   }
+
+  -- 4. Tuya 온습도 센서 (ZTH05Z)
+  ["_TZE200_vvmbj46n"] = {
+    [1] = parsers.temperature,
+    [2] = parsers.humidity,
+    [4] = parsers.battery  -- Z2M 코드에 4번이 배터리(raw)로 되어 있음
+  },
+
+  -- 5. Tuya 온습도 센서 (ZTH01)
+  ["_TZE204_yjjdcqsq"] = {
+    [1] = parsers.temperature,
+    [2] = parsers.humidity,
+    -- 이 모델은 Z2M 코드상 raw 배터리 DP가 명확하지 않아 일단 온습도만 맵핑
+  }
 }
 
 -- ====================================================================

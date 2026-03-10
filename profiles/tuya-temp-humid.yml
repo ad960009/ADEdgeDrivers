@@ -1,0 +1,12 @@
+name: tuya-temp-humid
+components:
+  - id: main
+    capabilities:
+      - id: temperatureMeasurement   # 👈 온도를 메인으로
+        version: 1
+      - id: relativeHumidityMeasurement # 👈 습도
+        version: 1
+      - id: battery                  # 👈 배터리
+        version: 1
+    categories:
+      - name: TemperatureMeasurement # 카테고리를 명확히 지정!
