@@ -1,4 +1,4 @@
-name: "My First Tuya Driver"
-packageKey: "my.first.tuya.driver"
+name: "AD Tuya Driver"
+packageKey: "tuya.ad960009.driver"
 permissions:
   zigbee: {}

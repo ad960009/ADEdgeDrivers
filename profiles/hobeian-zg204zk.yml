@@ -1,0 +1,12 @@
+name: hobeian-zg204zk
+components:
+  - id: main
+    capabilities:
+      - id: presenceSensor        # 재실 센서
+        version: 1
+      - id: illuminanceMeasurement # 조도 센서
+        version: 1
+      - id: battery               # 배터리 잔량
+        version: 1
+    categories:
+      - name: MotionSensor

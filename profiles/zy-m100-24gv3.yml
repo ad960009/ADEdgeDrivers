@@ -1,0 +1,10 @@
+name: zy-m100-24gv3
+components:
+  - id: main
+    capabilities:
+      - id: presenceSensor           # 재실
+        version: 1
+      - id: illuminanceMeasurement   # 조도
+        version: 1
+    categories:
+      - name: MultiFunctionalSensor  # 다기능 센서 아이콘
