@@ -4,6 +4,18 @@ local log = require "log"
 
 local TUYA_CLUSTER = 0xEF00
 
+local function update_dashboard_text(device)
+  -- 기기가 기억하고 있는 최근 온도와 습도를 가져옵니다. (없으면 "--" 표시)
+  local temp = device:get_field("last_temp") or "--"
+  local humid = device:get_field("last_humid") or "--"
+
+  -- "24.5 °C, 45 %" 형태로 글자를 예쁘게 조립합니다.
+  local display_text = string.format("%s °C, %s %%", temp, humid)
+
+  -- 조립된 글자를 1번 자리(firmwareUpdate)로 발사!
+  device:emit_event(capabilities.firmwareUpdate.currentVersion({value = display_text}))
+end
+
 -- ====================================================================
 -- 1. 파싱 함수 모음 (데이터를 스마트싱스 규격으로 변환)
 -- ====================================================================
@@ -42,11 +54,19 @@ local parsers = {
   temperature = function(device, value)
     local temp_val = value / 10.0
     device:emit_event(capabilities.temperatureMeasurement.temperature({value = temp_val, unit = "C"}))
+
+    -- 온도를 메모리에 저장하고 텍스트 업데이트!
+    device:set_field("last_temp", temp_val, {persist = true})
+    update_dashboard_text(device)
   end,
 
   -- 습도 (값 그대로)
   humidity = function(device, value)
     device:emit_event(capabilities.relativeHumidityMeasurement.humidity({value = value}))
+
+    -- 습도를 메모리에 저장하고 텍스트 업데이트!
+    device:set_field("last_humid", value, {persist = true})
+    update_dashboard_text(device)
   end, -- ✅ 콤마 추가됨!
 
   -- 배터리 상태 (0, 1, 2)
