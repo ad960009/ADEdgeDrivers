@@ -1,0 +1,59 @@
+{
+	"dashboard": {
+		"states": [],
+		"actions": []
+	},
+	"detailView": [
+		{
+			"label": "실시간 타겟 거리",
+			"displayType": "state",
+			"state": {
+				"label": "{{distance.value}}"
+			}
+		},
+		{
+			"label": "📏 적용된 최소 거리",
+			"displayType": "state",
+			"state": {
+				"label": "{{currentMin.value}}"
+			}
+		},
+		{
+			"label": "📏 적용된 최대 거리",
+			"displayType": "state",
+			"state": {
+				"label": "{{currentMax.value}}"
+			}
+		},
+		{
+			"label": "🏃 동작 민감도 (Move)",
+			"displayType": "state",
+			"state": {
+				"label": "{{moveSensitivity.value}}"
+			}
+		},
+		{
+			"label": "🧍 재실 민감도 (Presence)",
+			"displayType": "state",
+			"state": {
+				"label": "{{presenceSensitivity.value}}"
+			}
+		},
+		{
+			"label": "⏳ 감지 유지 시간",
+			"displayType": "state",
+			"state": {
+				"label": "{{presenceTimeout.value}}"
+			}
+		},
+		{
+			"label": "🔌 거리 스위치 상태",
+			"displayType": "state",
+			"state": {
+				"label": "{{distanceSwitch.value}}"
+			}
+		}
+	],
+	"id": "voicewatch56866.radarInfo",
+	"version": 1
+}

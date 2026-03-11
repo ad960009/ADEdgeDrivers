@@ -1,0 +1,111 @@
+{
+	"name": "Radar Info",
+	"attributes": {
+		"distance": {
+			"schema": {
+				"type": "object",
+				"properties": {
+					"value": {
+						"type": "string"
+					}
+				},
+				"additionalProperties": false,
+				"required": [
+					"value"
+				]
+			},
+			"enumCommands": []
+		},
+		"currentMin": {
+			"schema": {
+				"type": "object",
+				"properties": {
+					"value": {
+						"type": "string"
+					}
+				},
+				"additionalProperties": false,
+				"required": [
+					"value"
+				]
+			},
+			"enumCommands": []
+		},
+		"currentMax": {
+			"schema": {
+				"type": "object",
+				"properties": {
+					"value": {
+						"type": "string"
+					}
+				},
+				"additionalProperties": false,
+				"required": [
+					"value"
+				]
+			},
+			"enumCommands": []
+		},
+		"moveSensitivity": {
+			"schema": {
+				"type": "object",
+				"properties": {
+					"value": {
+						"type": "string"
+					}
+				},
+				"additionalProperties": false,
+				"required": [
+					"value"
+				]
+			},
+			"enumCommands": []
+		},
+		"presenceSensitivity": {
+			"schema": {
+				"type": "object",
+				"properties": {
+					"value": {
+						"type": "string"
+					}
+				},
+				"additionalProperties": false,
+				"required": [
+					"value"
+				]
+			},
+			"enumCommands": []
+		},
+		"presenceTimeout": {
+			"schema": {
+				"type": "object",
+				"properties": {
+					"value": {
+						"type": "string"
+					}
+				},
+				"additionalProperties": false,
+				"required": [
+					"value"
+				]
+			},
+			"enumCommands": []
+		},
+		"distanceSwitch": {
+			"schema": {
+				"type": "object",
+				"properties": {
+					"value": {
+						"type": "string"
+					}
+				},
+				"additionalProperties": false,
+				"required": [
+					"value"
+				]
+			},
+			"enumCommands": []
+		}
+	},
+	"commands": {}
+}

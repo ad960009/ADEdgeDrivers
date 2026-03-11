@@ -1,0 +1,21 @@
+{
+	"name": "Temp and Humidity",
+	"attributes": {
+		"status": {
+			"schema": {
+				"type": "object",
+				"properties": {
+					"value": {
+						"type": "string"
+					}
+				},
+				"additionalProperties": false,
+				"required": [
+					"value"
+				]
+			},
+			"enumCommands": []
+		}
+	},
+	"commands": {}
+}
