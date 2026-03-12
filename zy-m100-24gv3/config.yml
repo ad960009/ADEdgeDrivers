@@ -1,0 +1,4 @@
+name: "ZY-M100-24GV3"
+packageKey: "zy-m100-24gv3.tuya.ad960009.driver"
+permissions:
+  zigbee: {}

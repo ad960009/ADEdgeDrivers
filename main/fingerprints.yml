@@ -11,12 +11,6 @@ zigbeeManufacturer:
     model: "TS0601"
     deviceProfileName: "hobeian-zg204zv"
 
-  - id: "zy-m100-24gv3"
-    deviceLabel: "TUYA Presence Sensor"
-    manufacturer: "_TZE200_ya4ft0w4"
-    model: "TS0601"
-    deviceProfileName: "zy-m100-24gv3"
-
   - id: "tuya_th_vvmbj46n"
     deviceLabel: "Tuya Temp & Humid (ZTH05Z)"
     manufacturer: "_TZE200_vvmbj46n"

@@ -1,0 +1,6 @@
+zigbeeManufacturer:
+  - id: "zy-m100-24gv3"
+    deviceLabel: "TUYA Presence Sensor"
+    manufacturer: "_TZE200_ya4ft0w4"
+    model: "TS0601"
+    deviceProfileName: "zy-m100-24gv3"

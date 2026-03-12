@@ -8,7 +8,6 @@ local tuya_utils = require "tuya_utils" -- 🌟 여기서 한 번만 부릅니�
 local TUYA_CLUSTER = tuya_utils.CLUSTER_ID or 0xEF00
 
 local RADAR_CAP_ID = "voicewatch56866.radarInfo"
-local TEMP_HUMID_CAP_ID = "voicewatch56866.tempAndHumidity"
 
 -- ====================================================================
 -- 🌟 전송 래퍼 함수 (init.lua 내부에서 사용)
@@ -16,18 +15,6 @@ local TEMP_HUMID_CAP_ID = "voicewatch56866.tempAndHumidity"
 local function send_tuya_command(device, dp_id, dp_type, value)
   tuya_utils.send_command(device, dp_id, dp_type, value)
   log.info(string.format("🚀 [공식 유틸 송신] DP:%d | Type:%02X | Value:%s", dp_id, dp_type, tostring(value)))
-end
-
-local function update_dashboard_text(device)
-  if not device:supports_capability_by_id("voicewatch56866.tempAndHumidity") then
-    return
-  end
-
-  local temp = device:get_field("last_temp") or "--"
-  local humid = device:get_field("last_humid") or "--"
-  local display_text = string.format("%s °C, %s %%", temp, humid)
-  local custom_cap = capabilities["voicewatch56866.tempAndHumidity"]
-  device:emit_event(custom_cap.status({value = display_text}))
 end
 
 -- ====================================================================
@@ -44,26 +31,6 @@ local parsers = {
   illuminance = function(device, value)
     device:emit_event(capabilities.illuminanceMeasurement.illuminance({value = value}))
   end,
-  temperature = function(device, value)
-    local temp_val = value / 10.0
-    device:emit_event(capabilities.temperatureMeasurement.temperature({value = temp_val, unit = "C"}))
-    device:set_field("last_temp", temp_val, {persist = true})
-    update_dashboard_text(device)
-  end,
-  humidity = function(device, value)
-    device:emit_event(capabilities.relativeHumidityMeasurement.humidity({value = value}))
-    device:set_field("last_humid", value, {persist = true})
-    update_dashboard_text(device)
-  end,
-  battery_state_enum = function(device, value)
-    local pct = (value == 0) and 10 or (value == 1 and 50 or 100)
-    device:emit_event(capabilities.battery.battery({value = pct}))
-    return true
-  end,
-  -- 범용 배터리
-  battery = function(device, value)
-    device:emit_event(capabilities.battery.battery({value = math.min(math.max(value, 0), 100)}))
-  end
 }
 
 -- 🌟 실시간 레이더 거리 처리 공통 함수 (재사용 가능)
@@ -121,8 +88,6 @@ end
 -- 3. 기기별 DP 매핑 사전
 -- ====================================================================
 local DEVICE_PROFILES = {
-  ["HOBEIAN"] = { [1] = parsers.presence_complex, [106] = parsers.illuminance, [121] = parsers.battery },
-  ["_TZE200_rhgsbacq"] = { [1] = parsers.presence_complex, [106] = parsers.illuminance, [111] = parsers.temperature, [101] = parsers.humidity, [110] = parsers.battery },
   ["_TZE200_ya4ft0w4"] = {
     [1] = parsers.presence_complex,
     [103] = parsers.illuminance,
@@ -206,12 +171,12 @@ local function info_changed(driver, device, event, args)
   if not device.preferences then return end
 
   local prefs_config = {
-    presenceTimeout      = { dp = 105, factor = 1 },
-    presenceSensitivity  = { dp = 102, factor = 1 },
-    moveSensitivity      = { dp = 2,   factor = 1 },
-    detectionDistanceMin = { dp = 3,   factor = 100 },
-    detectionDistanceMax = { dp = 4,   factor = 100 },
-	distanceSwitch = { dp = 101, type = tuya_utils.types.BOOL, factor = 1 }
+    presenceTimeout      = { dp = 105, type = tuya_utils.types.VALUE, factor = 1 },
+    presenceSensitivity  = { dp = 102, type = tuya_utils.types.VALUE, factor = 1 },
+    moveSensitivity      = { dp = 2,   type = tuya_utils.types.VALUE, factor = 1 },
+    detectionDistanceMin = { dp = 3,   type = tuya_utils.types.VALUE, factor = 100 },
+    detectionDistanceMax = { dp = 4,   type = tuya_utils.types.VALUE, factor = 100 },
+    distanceSwitch       = { dp = 101, type = tuya_utils.types.BOOL,  factor = 1 }
   }
 
   for name, cfg in pairs(prefs_config) do
@@ -226,27 +191,41 @@ local function info_changed(driver, device, event, args)
 	  end
 
       log.info(string.format("⚙️ [송신 시도] %s -> %d", name, send_val))
-
-      -- 🌟 수정된 유틸리티 호출
-	  local dp_type = cfg.type or tuya_utils.types.VALUE
-      tuya_utils.send_command(device, cfg.dp, dp_type, send_val)
+      tuya_utils.send_command(device, cfg.dp, cfg.type, send_val)
     end
   end
 end
 
 -- ====================================================================
+-- 🌟 기기 초기화 감지기 (Lifecycle: init)
+-- ====================================================================
+local function device_init(driver, device)
+  log.info("==================================================")
+  log.info("🟢 기기 로드 완료: " .. (device.label or device.device_network_id))
+  log.info("📋 [현재 기기에 등록된 역량(Capability) 목록]")
+
+  -- 기기 프로필(yml)을 바탕으로 허브가 인식한 역량들을 순회하며 출력
+  if device.capabilities then
+    for cap_id, _ in pairs(device.capabilities) do
+      log.info("   ✔️ " .. cap_id)
+    end
+  else
+    log.warn("   ⚠️ 등록된 역량이 없습니다.")
+  end
+  log.info("==================================================")
+end
+
+-- ====================================================================
 -- 6. 드라이버 실행부
 -- ====================================================================
-local tuya_driver = ZigbeeDriver("ad_tuya_driver", {
+local tuya_driver = ZigbeeDriver("zy-m100-24gv3", {
   supported_capabilities = {
     capabilities.presenceSensor,
     capabilities.illuminanceMeasurement,
-    capabilities.battery,
-    capabilities.temperatureMeasurement,
-    capabilities.relativeHumidityMeasurement,
-    capabilities.firmwareUpdate
+	capabilities[RADAR_CAP_ID],
   },
   lifecycle_handlers = {
+	init = device_init, -- 🌟 기기 초기화 감지기 등록
     infoChanged = info_changed
   },
   zigbee_handlers = {
@@ -261,5 +240,5 @@ local tuya_driver = ZigbeeDriver("ad_tuya_driver", {
   },
 })
 
-log.info("🚀 AD Tuya 통합 드라이버 (공식 유틸 모드) 실행!")
+log.info("🚀  Tuya ZY-M100-24GV3 드라이버 실행!")
 tuya_driver:run()
