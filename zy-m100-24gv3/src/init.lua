@@ -3,6 +3,8 @@ local capabilities = require "st.capabilities"
 local log = require "log"
 local tuya_utils = require "tuya_utils" -- 🌟 여기서 한 번만 부릅니다.
 
+local utils = require "st.utils" -- 👈 테이블 시각화를 위한 라이브러리
+
 -- 테이블 인덱스 에러 방지를 위해 로컬 상수로 다시 정의하거나
 -- 하단 테이블에서 tuya_utils.CLUSTER_ID를 직접 사용해야 합니다.
 local TUYA_CLUSTER = tuya_utils.CLUSTER_ID or 0xEF00
@@ -33,6 +35,71 @@ local parsers = {
   end,
 }
 
+-- ====================================================================
+-- 🛡️ [공식 API 기반] 객체 타입 전용 표준 송신 함수
+-- ====================================================================
+local function safe_emit_custom_event(device, cap_id, attr_id, value)
+  -- 1. 메인 컴포넌트 객체를 가져옵니다.
+  local component = device.profile.components.main
+
+  -- 2. 사용자님의 Schema 규격 { "value": "string" } 에 맞춘 순수 데이터 생성
+  -- 다른 메타데이터가 섞이지 않도록 'Clean Table'을 만듭니다.
+  local clean_payload = { value = tostring(value) }
+
+  -- 3. [공식 정석 API] emit_component_event 사용
+  -- 이 API는 emit_event보다 데이터 검증 시 유연하며,
+  -- 특히 객체(Object) 형태의 속성을 보낼 때 SDK 문서에서 권장하는 방식입니다.
+  if component then
+    device:emit_component_event(component, cap_id, attr_id, clean_payload)
+    log.info(string.format("✅ [표준 송신] %s -> %s", attr_id, tostring(value)))
+  else
+    log.error("❌ [오류] 컴포넌트를 찾을 수 없습니다.")
+  end
+end
+
+-- ====================================================================
+-- 🛡️ [정석 방식] 스마트싱스 SDK 표준 규격 준수 송신 함수
+-- ====================================================================
+local function safe_emit_custom_event(device, cap_id, attr_id, value)
+  local cap = capabilities[cap_id]
+  if not cap then return end
+
+  -- 1. 속성 객체(Attribute Object)를 가져옵니다.
+  local attr_obj = cap[attr_id]
+  if not attr_obj then return end
+
+  -- [중요] SDK 내부 라이브러리(aware.lua)의 충돌을 막기 위해
+  -- NAME 필드가 없을 경우 수동으로 채워줍니다. (표준 규격 보완)
+  if type(attr_obj) == "table" and not attr_obj.NAME then
+    attr_obj.NAME = attr_id
+  end
+
+  -- 2. 사용자님의 JSON 설계도(type: object)에 맞는 데이터 덩어리를 만듭니다.
+  -- 설계도에서 { "value": { "type": "string" } } 로 정의했으므로 아래 구조가 '객체 값'이 됩니다.
+  local object_value = { value = value }
+
+  -- 3. [정석의 핵심] SDK가 제공하는 생성자 함수를 사용하여 'Event' 객체를 만듭니다.
+  -- 만약 attr_obj가 함수라면 실행하고, 아니라면 표준 테이블 구조를 반환합니다.
+  local event
+  if type(attr_obj) == "function" then
+    -- SDK가 정상적으로 함수를 생성한 경우
+    event = attr_obj(object_value)
+  else
+    -- SDK가 함수화하지 못한 경우, 수동으로 표준 이벤트 테이블 조립
+    event = {
+      capability = cap,
+      attribute = attr_obj,
+      state = { value = object_value } -- 🌟 JSON 객체 타입에 맞춘 매핑
+    }
+  end
+
+  -- 4. 생성된 정석 이벤트 객체를 송신합니다.
+  if event then
+    device:emit_event(event)
+    log.info(string.format("✅ [정석 송신] %s -> %s", attr_id, tostring(value)))
+  end
+end
+
 -- 🌟 실시간 레이더 거리 처리 공통 함수 (재사용 가능)
 local function handle_radar_distance(device, value)
   local last_distance = device:get_field("last_distance")
@@ -51,8 +118,8 @@ local function handle_radar_distance(device, value)
   end
 
   -- 커스텀 전광판 업데이트
-  if device:supports_capability_by_id("voicewatch56866.radarDistance") then
-    local custom_cap = capabilities["voicewatch56866.radarDistance"]
+  if device:supports_capability_by_id(RADAR_CAP_ID) then
+    local custom_cap = capabilities[RADAR_CAP_ID]
     local display_text = ""
 
     if value == 0 then
@@ -61,28 +128,54 @@ local function handle_radar_distance(device, value)
       display_text = string.format("%.2f m", value / 10.0)
     end
 
-    device:emit_event(custom_cap.distance({value = display_text}))
+	safe_emit_custom_event(device, RADAR_CAP_ID, "distance", display_text)
   end
 
   return true
 end
 
-local function safe_emit_custom_event(device, cap_id, attr_id, value)
-  -- 1. 기기가 해당 역량을 지원하는지 확인
-  if device:supports_capability_by_id(cap_id) then
-    local cap = capabilities[cap_id]
+-- ====================================================================
+-- 🛡️ [최종] 타입 대응 정밀 송신 함수 (Table/Function 모두 지원)
+-- ====================================================================
+-- local function safe_emit_custom_event(device, cap_id, attr_id, value)
+--   local cap = capabilities[cap_id]
 
-    -- 2. 역량 객체와 해당 속성 메소드가 존재하는지 검사
-    if cap and type(cap[attr_id]) == "function" then
-      -- 3. 존재하면 실행 (값은 {value = ...} 형태로 래핑)
-      device:emit_event(cap[attr_id]({value = value}))
-      log.info(string.format("✅ [이벤트 송신] %s -> %s", attr_id, tostring(value)))
-    else
-      -- 아직 동기화되지 않았거나 오타가 있는 경우 로그만 남기고 무시
-      log.warn(string.format("⚠️ [미지원 속성] %s 역량에 '%s' 속성이 아직 없거나 동기화 전입니다.", cap_id, attr_id))
-    end
-  end
-end
+--   -- [관문 1] 역량 존재 확인
+--   if not cap then
+--     log.warn(string.format("⚠️ [1단계 실패] '%s' 역량 로드 불가", cap_id))
+--     return
+--   end
+
+--   -- [관문 2] 속성 존재 확인
+--   local attr = cap[attr_id]
+--   if not attr then
+--     log.warn(string.format("⚠️ [2단계 실패] '%s' 역량 내 '%s' 속성 없음", cap_id, attr_id))
+--     return
+--   end
+
+--   -- [관문 3] 실행 방식 결정
+--   local attr_type = type(attr)
+
+--   if attr_type == "function" then
+--     -- 케이스 A: 정석적인 함수형 (직접 실행)
+--     device:emit_event(attr({value = value}))
+--     log.info(string.format("✅ [송신:Function] %s -> %s", attr_id, tostring(value)))
+
+--   elseif attr_type == "table" then
+--     -- 케이스 B: 테이블형 (구조체를 직접 조립하여 송신)
+--     -- 스마트싱스 내부에서 테이블일 경우, 해당 속성 객체 자체가 이벤트를 생성할 수 있습니다.
+--     local event = {
+--       capability = cap,
+--       attribute = attr,
+--       state = { value = value }
+--     }
+--     device:emit_event(event)
+--     log.info(string.format("✅ [송신:Table] %s -> %s", attr_id, tostring(value)))
+
+--   else
+--     log.warn(string.format("⚠️ [3단계 실패] '%s'의 타입이 예상 밖입니다: %s", attr_id, attr_type))
+--   end
+-- end
 
 -- ====================================================================
 -- 3. 기기별 DP 매핑 사전
@@ -99,7 +192,7 @@ local DEVICE_PROFILES = {
       return true
     end,
     [101] = function(device, value)
-      local state = (value == 1 or value == true) and "켜짐 (ON)" or "꺼짐 (OFF)"
+      local state = (value == 1 or value == true) and "On" or "Off"
       safe_emit_custom_event(device, RADAR_CAP_ID, "distanceSwitch", state)
       log.info("⚙️ [동기화] 거리 스위치: " .. state)
       return true
@@ -204,13 +297,20 @@ local function device_init(driver, device)
   log.info("🟢 기기 로드 완료: " .. (device.label or device.device_network_id))
   log.info("📋 [현재 기기에 등록된 역량(Capability) 목록]")
 
-  -- 기기 프로필(yml)을 바탕으로 허브가 인식한 역량들을 순회하며 출력
-  if device.capabilities then
-    for cap_id, _ in pairs(device.capabilities) do
-      log.info("   ✔️ " .. cap_id)
+  local has_caps = false
+
+  -- 스마트싱스 기기 객체의 프로필 > 컴포넌트 > 역량 구조를 순회합니다.
+  if device.profile and device.profile.components then
+    for comp_id, component in pairs(device.profile.components) do
+      for cap_id, _ in pairs(component.capabilities or {}) do
+        log.info(string.format("   ✔️ [%s] %s", comp_id, cap_id))
+        has_caps = true
+      end
     end
-  else
-    log.warn("   ⚠️ 등록된 역량이 없습니다.")
+  end
+
+  if not has_caps then
+    log.warn("   ⚠️ 등록된 역량이 없습니다. (프로필 매핑 오류)")
   end
   log.info("==================================================")
 end

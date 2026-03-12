@@ -161,13 +161,20 @@ local function device_init(driver, device)
   log.info("🟢 기기 로드 완료: " .. (device.label or device.device_network_id))
   log.info("📋 [현재 기기에 등록된 역량(Capability) 목록]")
 
-  -- 기기 프로필(yml)을 바탕으로 허브가 인식한 역량들을 순회하며 출력
-  if device.capabilities then
-    for cap_id, _ in pairs(device.capabilities) do
-      log.info("   ✔️ " .. cap_id)
+  local has_caps = false
+
+  -- 스마트싱스 기기 객체의 프로필 > 컴포넌트 > 역량 구조를 순회합니다.
+  if device.profile and device.profile.components then
+    for comp_id, component in pairs(device.profile.components) do
+      for cap_id, _ in pairs(component.capabilities or {}) do
+        log.info(string.format("   ✔️ [%s] %s", comp_id, cap_id))
+        has_caps = true
+      end
     end
-  else
-    log.warn("   ⚠️ 등록된 역량이 없습니다.")
+  end
+
+  if not has_caps then
+    log.warn("   ⚠️ 등록된 역량이 없습니다. (프로필 매핑 오류)")
   end
   log.info("==================================================")
 end
