@@ -125,6 +125,14 @@ local ZTH05Z_MAP = {
   [9] = { func = function(device, val) log.info("🌡️ 단위 설정: " .. (val == 0 and "C" or "F")) end },
   [19] = { func = function(device, val) log.info("🌡️ 온도 보고 민감도: " .. (val/10) .. "°C") end },
   [20] = { func = function(device, val) log.info("💧 습도 보고 민감도: " .. val .. "%") end },
+  -- 🌟 알람 및 리포트 설정값들 (단순 로그 기록으로 WARN 제거)
+  [10] = { func = function(device, val) log.info(string.format("[%s] 🔔 고온 알람 설정: %.1f°C", device.label, val/10)) end },
+  [11] = { func = function(device, val) log.info(string.format("[%s] 🔔 저온 알람 설정: %.1f°C", device.label, val/10)) end },
+  [12] = { func = function(device, val) log.info(string.format("[%s] 🔔 고습 알람 설정: %d%%", device.label, val)) end },
+  [13] = { func = function(device, val) log.info(string.format("[%s] 🔔 저습 알람 설정: %d%%", device.label, val)) end },
+  [17] = { func = function(device, val) log.info(string.format("[%s] ⏱️ 온도 보고 주기: %d분", device.label, val)) end },
+  [18] = { func = function(device, val) log.info(string.format("[%s] ⏱️ 습도 보고 주기: %d분", device.label, val)) end },
+  [19] = { func = function(device, val) log.info(string.format("[%s] 🎯 온도 민감도: %.1f°C", device.label, val/10)) end },
 }
 
 local DEVICE_PROFILES = {
