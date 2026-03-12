@@ -36,36 +36,36 @@ local parsers = {
 }
 
 -- ====================================================================
--- 🛡️ [최종] 문자열 기반 커스텀 이벤트 직접 송신 함수
+-- 🛡️ [최종 완결판] SDK 의존성 제거, 로우레벨(Raw) 직접 송신 함수
+-- ====================================================================
+-- ====================================================================
+-- 🛡️ [표준 정밀 교정] SDK 가이드라인 준수 송신 함수
 -- ====================================================================
 local function safe_emit_custom_event(device, cap_id, attr_id, value)
-  -- 1. 값을 반드시 문자열로 변환 (이중 포장 제거)
   local string_value = tostring(value)
 
-  -- 2. 역량 로드 확인
-  local cap_obj = capabilities[cap_id]
-  if not cap_obj then
-    log.error(string.format("❌ '%s' 역량을 찾을 수 없습니다.", cap_id))
+  -- 1. 라이브러리에서 역량을 직접 가져옵니다.
+  local capabilities = require "st.capabilities"
+  local custom_cap = capabilities[cap_id]
+
+  if custom_cap == nil then
+    log.error(string.format("❌ 역량 로드 실패: %s", cap_id))
     return
   end
 
-  local attr_obj = cap_obj[attr_id]
+  -- 2. 역량 내부의 속성(Attribute) 객체를 가져옵니다.
+  local attr = custom_cap[attr_id]
 
-  -- 3. 송신 로직 실행
-  if type(attr_obj) == "function" then
-    -- 혹시라도 함수로 정상 로드된 경우
-    device:emit_event(attr_obj(string_value))
-    log.info(string.format("✅ [송신:F] %s -> %s", attr_id, string_value))
+  -- 3. 표준 호출 방식 시도
+  if type(attr) == "function" then
+    -- 정상적인 생성자 함수인 경우
+    device:emit_event(attr({ value = string_value }))
+    log.info(string.format("✅ [송신:표준/F] %s -> %s", attr_id, string_value))
   else
-    -- 함수가 아닌 원시 테이블로 로드된 경우 (현재 상황)
-    -- 객체 참조 대신 안전하게 명시적 문자열 ID를 사용하여 송신
-    device:emit_event({
-      component_id = "main",  -- 컴포넌트 명시
-      capability_id = cap_id, -- 예: "voicewatch56866.radarInfo"
-      attribute_id = attr_id, -- 예: "distance"
-      state = { value = string_value } -- 🌟 이중 포장 해제! 순수 문자열만 전달
-    })
-    log.info(string.format("✅ [송신:T] %s -> %s", attr_id, string_value))
+    -- 함수가 아닌 경우(현재 상황), SDK의 가장 안전한 Fallback 메서드 사용
+    -- 이 방식은 SDK 내부의 aware.lua 간섭을 최소화합니다.
+    device:emit_event(custom_cap[attr_id]({ value = string_value }))
+    log.info(string.format("✅ [송신:표준/A] %s -> %s", attr_id, string_value))
   end
 end
 
