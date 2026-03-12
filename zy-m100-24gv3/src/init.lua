@@ -36,67 +36,36 @@ local parsers = {
 }
 
 -- ====================================================================
--- 🛡️ [공식 API 기반] 객체 타입 전용 표준 송신 함수
+-- 🛡️ [최종] 문자열 기반 커스텀 이벤트 직접 송신 함수
 -- ====================================================================
 local function safe_emit_custom_event(device, cap_id, attr_id, value)
-  -- 1. 메인 컴포넌트 객체를 가져옵니다.
-  local component = device.profile.components.main
+  -- 1. 값을 반드시 문자열로 변환 (이중 포장 제거)
+  local string_value = tostring(value)
 
-  -- 2. 사용자님의 Schema 규격 { "value": "string" } 에 맞춘 순수 데이터 생성
-  -- 다른 메타데이터가 섞이지 않도록 'Clean Table'을 만듭니다.
-  local clean_payload = { value = tostring(value) }
-
-  -- 3. [공식 정석 API] emit_component_event 사용
-  -- 이 API는 emit_event보다 데이터 검증 시 유연하며,
-  -- 특히 객체(Object) 형태의 속성을 보낼 때 SDK 문서에서 권장하는 방식입니다.
-  if component then
-    device:emit_component_event(component, cap_id, attr_id, clean_payload)
-    log.info(string.format("✅ [표준 송신] %s -> %s", attr_id, tostring(value)))
-  else
-    log.error("❌ [오류] 컴포넌트를 찾을 수 없습니다.")
-  end
-end
-
--- ====================================================================
--- 🛡️ [정석 방식] 스마트싱스 SDK 표준 규격 준수 송신 함수
--- ====================================================================
-local function safe_emit_custom_event(device, cap_id, attr_id, value)
-  local cap = capabilities[cap_id]
-  if not cap then return end
-
-  -- 1. 속성 객체(Attribute Object)를 가져옵니다.
-  local attr_obj = cap[attr_id]
-  if not attr_obj then return end
-
-  -- [중요] SDK 내부 라이브러리(aware.lua)의 충돌을 막기 위해
-  -- NAME 필드가 없을 경우 수동으로 채워줍니다. (표준 규격 보완)
-  if type(attr_obj) == "table" and not attr_obj.NAME then
-    attr_obj.NAME = attr_id
+  -- 2. 역량 로드 확인
+  local cap_obj = capabilities[cap_id]
+  if not cap_obj then
+    log.error(string.format("❌ '%s' 역량을 찾을 수 없습니다.", cap_id))
+    return
   end
 
-  -- 2. 사용자님의 JSON 설계도(type: object)에 맞는 데이터 덩어리를 만듭니다.
-  -- 설계도에서 { "value": { "type": "string" } } 로 정의했으므로 아래 구조가 '객체 값'이 됩니다.
-  local object_value = { value = value }
+  local attr_obj = cap_obj[attr_id]
 
-  -- 3. [정석의 핵심] SDK가 제공하는 생성자 함수를 사용하여 'Event' 객체를 만듭니다.
-  -- 만약 attr_obj가 함수라면 실행하고, 아니라면 표준 테이블 구조를 반환합니다.
-  local event
+  -- 3. 송신 로직 실행
   if type(attr_obj) == "function" then
-    -- SDK가 정상적으로 함수를 생성한 경우
-    event = attr_obj(object_value)
+    -- 혹시라도 함수로 정상 로드된 경우
+    device:emit_event(attr_obj(string_value))
+    log.info(string.format("✅ [송신:F] %s -> %s", attr_id, string_value))
   else
-    -- SDK가 함수화하지 못한 경우, 수동으로 표준 이벤트 테이블 조립
-    event = {
-      capability = cap,
-      attribute = attr_obj,
-      state = { value = object_value } -- 🌟 JSON 객체 타입에 맞춘 매핑
-    }
-  end
-
-  -- 4. 생성된 정석 이벤트 객체를 송신합니다.
-  if event then
-    device:emit_event(event)
-    log.info(string.format("✅ [정석 송신] %s -> %s", attr_id, tostring(value)))
+    -- 함수가 아닌 원시 테이블로 로드된 경우 (현재 상황)
+    -- 객체 참조 대신 안전하게 명시적 문자열 ID를 사용하여 송신
+    device:emit_event({
+      component_id = "main",  -- 컴포넌트 명시
+      capability_id = cap_id, -- 예: "voicewatch56866.radarInfo"
+      attribute_id = attr_id, -- 예: "distance"
+      state = { value = string_value } -- 🌟 이중 포장 해제! 순수 문자열만 전달
+    })
+    log.info(string.format("✅ [송신:T] %s -> %s", attr_id, string_value))
   end
 end
 
