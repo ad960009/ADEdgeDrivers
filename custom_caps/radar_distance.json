@@ -1,111 +1,211 @@
 {
-	"name": "Radar Info",
+	"name": "Radar Distance",
 	"attributes": {
 		"distance": {
 			"schema": {
 				"type": "object",
 				"properties": {
 					"value": {
-						"type": "string"
+						"type": "number",
+						"minimum": 0,
+						"maximum": 10
+					},
+					"unit": {
+						"default": "m",
+						"enum": [
+							"m"
+						]
 					}
 				},
 				"additionalProperties": false,
 				"required": [
 					"value"
 				]
-			},
-			"enumCommands": []
+			}
 		},
-		"currentMin": {
+		"detectionDistanceMin": {
 			"schema": {
 				"type": "object",
 				"properties": {
 					"value": {
-						"type": "string"
+						"type": "number",
+						"minimum": 0,
+						"maximum": 8.25,
+						"step": 0.75
+					},
+					"unit": {
+						"default": "m",
+						"enum": [
+							"m"
+						]
 					}
 				},
 				"additionalProperties": false,
 				"required": [
 					"value"
 				]
-			},
-			"enumCommands": []
+			}
 		},
-		"currentMax": {
+		"detectionDistanceMax": {
 			"schema": {
 				"type": "object",
 				"properties": {
 					"value": {
-						"type": "string"
+						"type": "number",
+						"minimum": 0.75,
+						"maximum": 9.0,
+						"step": 0.75
+					},
+					"unit": {
+						"default": "m",
+						"enum": [
+							"m"
+						]
 					}
 				},
 				"additionalProperties": false,
 				"required": [
 					"value"
 				]
-			},
-			"enumCommands": []
-		},
-		"moveSensitivity": {
-			"schema": {
-				"type": "object",
-				"properties": {
-					"value": {
-						"type": "string"
-					}
-				},
-				"additionalProperties": false,
-				"required": [
-					"value"
-				]
-			},
-			"enumCommands": []
-		},
-		"presenceSensitivity": {
-			"schema": {
-				"type": "object",
-				"properties": {
-					"value": {
-						"type": "string"
-					}
-				},
-				"additionalProperties": false,
-				"required": [
-					"value"
-				]
-			},
-			"enumCommands": []
-		},
-		"presenceTimeout": {
-			"schema": {
-				"type": "object",
-				"properties": {
-					"value": {
-						"type": "string"
-					}
-				},
-				"additionalProperties": false,
-				"required": [
-					"value"
-				]
-			},
-			"enumCommands": []
+			}
 		},
 		"distanceSwitch": {
 			"schema": {
 				"type": "object",
 				"properties": {
 					"value": {
-						"type": "string"
+						"type": "string",
+						"enum": [
+							"on",
+							"off"
+						]
 					}
 				},
 				"additionalProperties": false,
 				"required": [
 					"value"
 				]
-			},
-			"enumCommands": []
+			}
+		},
+		"moveSensitivity": {
+			"schema": {
+				"type": "object",
+				"properties": {
+					"value": {
+						"type": "number",
+						"minimum": 1,
+						"maximum": 10
+					}
+				},
+				"additionalProperties": false,
+				"required": [
+					"value"
+				]
+			}
+		},
+		"presenceSensitivity": {
+			"schema": {
+				"type": "object",
+				"properties": {
+					"value": {
+						"type": "number",
+						"minimum": 1,
+						"maximum": 10
+					}
+				},
+				"additionalProperties": false,
+				"required": [
+					"value"
+				]
+			}
+		},
+		"presenceTimeout": {
+			"schema": {
+				"type": "object",
+				"properties": {
+					"value": {
+						"type": "number",
+						"minimum": 1,
+						"maximum": 15000
+					}
+				},
+				"additionalProperties": false,
+				"required": [
+					"value"
+				]
+			}
 		}
 	},
-	"commands": {}
+	"commands": {
+		"setDetectionDistanceMin": {
+			"arguments": [
+				{
+					"name": "value",
+					"optional": false,
+					"schema": {
+						"type": "number"
+					}
+				}
+			]
+		},
+		"setDetectionDistanceMax": {
+			"arguments": [
+				{
+					"name": "value",
+					"optional": false,
+					"schema": {
+						"type": "number"
+					}
+				}
+			]
+		},
+		"setDistanceSwitch": {
+			"arguments": [
+				{
+					"name": "value",
+					"optional": false,
+					"schema": {
+						"type": "string",
+						"enum": [
+							"on",
+							"off"
+						]
+					}
+				}
+			]
+		},
+		"setMoveSensitivity": {
+			"arguments": [
+				{
+					"name": "value",
+					"optional": false,
+					"schema": {
+						"type": "number"
+					}
+				}
+			]
+		},
+		"setPresenceSensitivity": {
+			"arguments": [
+				{
+					"name": "value",
+					"optional": false,
+					"schema": {
+						"type": "number"
+					}
+				}
+			]
+		},
+		"setPresenceTimeout": {
+			"arguments": [
+				{
+					"name": "value",
+					"optional": false,
+					"schema": {
+						"type": "number"
+					}
+				}
+			]
+		}
+	}
 }

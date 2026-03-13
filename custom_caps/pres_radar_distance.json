@@ -1,59 +1,150 @@
 {
-	"dashboard": {
-		"states": [],
-		"actions": []
-	},
+	"id": "voicewatch56866.radarDistance",
+	"version": 1,
 	"detailView": [
 		{
-			"label": "실시간 타겟 거리",
+			"label": "Current Distance",
 			"displayType": "state",
 			"state": {
-				"label": "{{distance.value}}"
+				"label": "{{distance.value}} {{distance.unit}}"
 			}
 		},
 		{
-			"label": "📏 적용된 최소 거리",
-			"displayType": "state",
-			"state": {
-				"label": "{{currentMin.value}}"
+			"label": "Detection Switch",
+			"displayType": "list",
+			"list": {
+				"command": {
+					"name": "setDistanceSwitch",
+					"alternatives": [
+						{
+							"key": "on",
+							"value": "ON",
+							"type": "active"
+						},
+						{
+							"key": "off",
+							"value": "OFF",
+							"type": "inactive"
+						}
+					]
+				},
+				"state": {
+					"value": "distanceSwitch.value",
+					"alternatives": [
+						{
+							"key": "on",
+							"value": "ON",
+							"type": "active"
+						},
+						{
+							"key": "off",
+							"value": "OFF",
+							"type": "inactive"
+						}
+					]
+				}
 			}
 		},
 		{
-			"label": "📏 적용된 최대 거리",
-			"displayType": "state",
-			"state": {
-				"label": "{{currentMax.value}}"
+			"label": "Min Detection Range",
+			"displayType": "slider",
+			"slider": {
+				"command": "setDetectionDistanceMin",
+				"value": "detectionDistanceMin.value",
+				"step": 0.75,
+				"range": [
+					0,
+					8.25
+				]
 			}
 		},
 		{
-			"label": "🏃 동작 민감도 (Move)",
-			"displayType": "state",
-			"state": {
-				"label": "{{moveSensitivity.value}}"
+			"label": "Max Detection Range",
+			"displayType": "slider",
+			"slider": {
+				"command": "setDetectionDistanceMax",
+				"value": "detectionDistanceMax.value",
+				"step": 0.75,
+				"range": [
+					0.75,
+					9
+				]
 			}
 		},
 		{
-			"label": "🧍 재실 민감도 (Presence)",
-			"displayType": "state",
-			"state": {
-				"label": "{{presenceSensitivity.value}}"
+			"label": "Move Sensitivity",
+			"displayType": "stepper",
+			"stepper": {
+				"command": {
+					"name": "setMoveSensitivity"
+				},
+				"value": "moveSensitivity.value",
+				"step": 1,
+				"range": [
+					1,
+					10
+				]
 			}
 		},
 		{
-			"label": "⏳ 감지 유지 시간",
-			"displayType": "state",
-			"state": {
-				"label": "{{presenceTimeout.value}}"
+			"label": "Presence Sensitivity",
+			"displayType": "stepper",
+			"stepper": {
+				"command": {
+					"name": "setPresenceSensitivity"
+				},
+				"value": "presenceSensitivity.value",
+				"step": 1,
+				"range": [
+					1,
+					10
+				]
 			}
 		},
 		{
-			"label": "🔌 거리 스위치 상태",
-			"displayType": "state",
-			"state": {
-				"label": "{{distanceSwitch.value}}"
+			"label": "Presence Timeout (sec)",
+			"displayType": "slider",
+			"slider": {
+				"command": "setPresenceTimeout",
+				"value": "presenceTimeout.value",
+				"step": 1,
+				"range": [
+					1,
+					15000
+				]
 			}
 		}
 	],
-	"id": "voicewatch56866.radarInfo",
-	"version": 1
+	"automation": {
+		"conditions": [
+			{
+				"label": "Current Distance",
+				"displayType": "numberField",
+				"numberField": {
+					"value": "distance.value",
+					"unit": "distance.unit"
+				}
+			}
+		],
+		"actions": [
+			{
+				"label": "Detection Switch",
+				"displayType": "list",
+				"list": {
+					"alternatives": [
+						{
+							"key": "on",
+							"value": "ON",
+							"type": "active"
+						},
+						{
+							"key": "off",
+							"value": "OFF",
+							"type": "inactive"
+						}
+					]
+				}
+			}
+		]
+	}
 }
