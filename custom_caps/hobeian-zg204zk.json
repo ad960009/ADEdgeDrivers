@@ -1,0 +1,148 @@
+{
+	"name": "hobeian zg204zk",
+	"attributes": {
+		"fadingTime": {
+			"schema": {
+				"type": "object",
+				"properties": {
+					"value": {
+						"type": "number",
+						"minimum": 0,
+						"maximum": 28800
+					}
+				},
+				"additionalProperties": false,
+				"required": [
+					"value"
+				]
+			}
+		},
+		"staticDetectionDistance": {
+			"schema": {
+				"type": "object",
+				"properties": {
+					"value": {
+						"type": "number",
+						"minimum": 0,
+						"maximum": 5
+					}
+				},
+				"additionalProperties": false,
+				"required": [
+					"value"
+				]
+			}
+		},
+		"staticDetectionSensitivity": {
+			"schema": {
+				"type": "object",
+				"properties": {
+					"value": {
+						"type": "number",
+						"minimum": 0,
+						"maximum": 10
+					}
+				},
+				"additionalProperties": false,
+				"required": [
+					"value"
+				]
+			}
+		},
+		"motionDetectionSensitivity": {
+			"schema": {
+				"type": "object",
+				"properties": {
+					"value": {
+						"type": "number",
+						"minimum": 0,
+						"maximum": 10
+					}
+				},
+				"additionalProperties": false,
+				"required": [
+					"value"
+				]
+			}
+		},
+		"indicator": {
+			"schema": {
+				"type": "object",
+				"properties": {
+					"value": {
+						"type": "string",
+						"enum": [
+							"on",
+							"off"
+						]
+					}
+				},
+				"additionalProperties": false,
+				"required": [
+					"value"
+				]
+			}
+		}
+	},
+	"commands": {
+		"setFadingTime": {
+			"arguments": [
+				{
+					"name": "value",
+					"optional": false,
+					"schema": {
+						"type": "number"
+					}
+				}
+			]
+		},
+		"setStaticDetectionDistance": {
+			"arguments": [
+				{
+					"name": "value",
+					"optional": false,
+					"schema": {
+						"type": "number"
+					}
+				}
+			]
+		},
+		"setStaticDetectionSensitivity": {
+			"arguments": [
+				{
+					"name": "value",
+					"optional": false,
+					"schema": {
+						"type": "number"
+					}
+				}
+			]
+		},
+		"setMotionDetectionSensitivity": {
+			"arguments": [
+				{
+					"name": "value",
+					"optional": false,
+					"schema": {
+						"type": "number"
+					}
+				}
+			]
+		},
+		"setIndicator": {
+			"arguments": [
+				{
+					"name": "value",
+					"optional": false,
+					"schema": {
+						"type": "string",
+						"enum": [
+							"on",
+							"off"
+						]
+					}
+				}
+			]
+		}
+	}
+}

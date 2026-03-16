@@ -103,11 +103,10 @@
 		},
 		{
 			"label": "Presence Timeout (sec)",
-			"displayType": "slider",
-			"slider": {
+			"displayType": "numberField",
+			"numberField": {
 				"command": "setPresenceTimeout",
 				"value": "presenceTimeout.value",
-				"step": 1,
 				"range": [
 					1,
 					15000

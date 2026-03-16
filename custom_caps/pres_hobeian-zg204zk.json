@@ -1,0 +1,101 @@
+{
+	"id": "voicewatch56866.hobeianZg204zk",
+	"version": 1,
+	"dashboard": {
+		"states": [],
+		"actions": []
+	},
+	"detailView": [
+		{
+			"label": "LED Indicator",
+			"displayType": "list",
+			"list": {
+				"command": {
+					"name": "setIndicator",
+					"alternatives": [
+						{
+							"key": "on",
+							"value": "ON",
+							"type": "active"
+						},
+						{
+							"key": "off",
+							"value": "OFF",
+							"type": "inactive"
+						}
+					]
+				},
+				"state": {
+					"value": "indicator.value",
+					"alternatives": [
+						{
+							"key": "on",
+							"value": "ON",
+							"type": "active"
+						},
+						{
+							"key": "off",
+							"value": "OFF",
+							"type": "inactive"
+						}
+					]
+				}
+			}
+		},
+		{
+			"label": "Static Detection Distance (m)",
+			"displayType": "slider",
+			"slider": {
+				"command": "setStaticDetectionDistance",
+				"value": "staticDetectionDistance.value",
+				"step": 0.01,
+				"range": [
+					0,
+					5
+				]
+			}
+		},
+		{
+			"label": "Static Detection Sensitivity",
+			"displayType": "stepper",
+			"stepper": {
+				"command": {
+					"name": "setStaticDetectionSensitivity"
+				},
+				"value": "staticDetectionSensitivity.value",
+				"step": 1,
+				"range": [
+					0,
+					10
+				]
+			}
+		},
+		{
+			"label": "Motion Detection Sensitivity",
+			"displayType": "stepper",
+			"stepper": {
+				"command": {
+					"name": "setMotionDetectionSensitivity"
+				},
+				"value": "motionDetectionSensitivity.value",
+				"step": 1,
+				"range": [
+					0,
+					10
+				]
+			}
+		},
+		{
+			"label": "Presence Keep Time (sec)",
+			"displayType": "numberField",
+			"numberField": {
+				"command": "setFadingTime",
+				"value": "fadingTime.value"
+			}
+		}
+	],
+	"automation": {
+		"conditions": [],
+		"actions": []
+	}
+}

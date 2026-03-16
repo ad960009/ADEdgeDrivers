@@ -65,4 +65,42 @@ function tuya_utils.send_command(device, dp_id, dp_type, value)
   device:send(msg)
 end
 
+function tuya_utils.send_query(device)
+  -- 1️⃣ Query용 Payload 조립 (DP 정보 없이 패킷 ID 2바이트만 포함)
+  local packet_id = 0x0000
+  local payload_str = string.pack(">I2", packet_id)
+  local payload_body = generic_body.GenericBody(payload_str)
+
+  -- 2️⃣ ZclHeader 설정 (0x00: Tuya Query Command)
+  -- 기존 send_command 구조를 차용하여 cmd 0x00 설정
+  local zclh = zcl_messages.ZclHeader({cmd = data_types.ZCLCommandId(0x00)})
+  zclh.frame_ctrl:set_cluster_specific()
+  zclh.frame_ctrl:set_disable_default_response()
+
+  -- 3️⃣ AddressHeader 상수 사용 (기존 구조 유지)
+  local endpoint = device:get_endpoint(tuya_utils.CLUSTER_ID) or 0x01
+  local addrh = messages.AddressHeader(
+    zb_const.HUB.ADDR,            -- 허브 주소 (0x0000)
+    zb_const.HUB.ENDPOINT,        -- 허브 엔드포인트 (0x01)
+    device:get_short_address(),   -- 기기 주소
+    endpoint,                     -- 기기 엔드포인트
+    zb_const.HA_PROFILE_ID,       -- 프로필 (0x0104)
+    tuya_utils.CLUSTER_ID         -- 클러스터 (0xEF00)
+  )
+
+  -- 4️⃣ 최종 메시지 조립
+  local message_body = zcl_messages.ZclMessageBody({
+    zcl_header = zclh,
+    zcl_body = payload_body
+  })
+
+  local msg = messages.ZigbeeMessageTx({
+    address_header = addrh,
+    body = message_body
+  })
+
+  -- 5️⃣ 전송
+  device:send(msg)
+end
+
 return tuya_utils
