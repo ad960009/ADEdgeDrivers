@@ -9,14 +9,15 @@ local CLUSTER_HUMIDITY    = 0x0405
 local ATTR_MEASURED_VALUE = 0x0000
 
 local TEMP_HUMID_CAP_ID = "voicewatch56866.tempAndHumidity"
-local HOBEIAN_CAP_ID = "voicewatch56866.hobeianZg204zk"
+local ZG204ZK_CAP_ID = "voicewatch56866.hobeianZg204zk"
 
 -- ====================================================================
 -- 🌟 전송 래퍼 함수 (init.lua 내부에서 사용)
 -- ====================================================================
 local function send_tuya_command(device, dp_id, dp_type, value)
   tuya_utils.send_command(device, dp_id, dp_type, value)
-  log.info(string.format("🚀 [공식 유틸 송신] DP:%d | Type:%02X | Value:%s", dp_id, dp_type, tostring(value)))
+  local device_name = device.label or device.device_network_id or "Unknown"
+  log.info(string.format("[%s] 🚀 DP:%d | Type:%02X | Value:%s", device_name, dp_id, dp_type, tostring(value)))
 end
 
 local function update_dashboard_text(device)
@@ -29,7 +30,7 @@ end
 
 local capability_handlers = {
   -- HOBEIAN 레이더 센서 전용 UI 조작 핸들러
-  [HOBEIAN_CAP_ID] = {
+  [ZG204ZK_CAP_ID] = {
     setIndicator = function(driver, device, command)
       local send_val = (command.args.value == "on") and 1 or 0
       send_tuya_command(device, 107, tuya_utils.types.BOOL, send_val)
@@ -87,19 +88,19 @@ local parsers = {
   -- HOBEIAN 전용 커스텀 파서
   hobeian_indicator = function(device, value)
     local state = (value == 1 or value == true) and "on" or "off"
-    device:emit_event(capabilities[HOBEIAN_CAP_ID].indicator(state))
+    device:emit_event(capabilities[ZG204ZK_CAP_ID].indicator(state))
   end,
   hobeian_static_dist = function(device, value)
-    device:emit_event(capabilities[HOBEIAN_CAP_ID].staticDetectionDistance(value / 100.0))
+    device:emit_event(capabilities[ZG204ZK_CAP_ID].staticDetectionDistance(value / 100.0))
   end,
   hobeian_static_sens = function(device, value)
-    device:emit_event(capabilities[HOBEIAN_CAP_ID].staticDetectionSensitivity(value))
+    device:emit_event(capabilities[ZG204ZK_CAP_ID].staticDetectionSensitivity(value))
   end,
   hobeian_motion_sens = function(device, value)
-    device:emit_event(capabilities[HOBEIAN_CAP_ID].motionDetectionSensitivity(value))
+    device:emit_event(capabilities[ZG204ZK_CAP_ID].motionDetectionSensitivity(value))
   end,
   hobeian_fading_time = function(device, value)
-    device:emit_event(capabilities[HOBEIAN_CAP_ID].fadingTime(value))
+    device:emit_event(capabilities[ZG204ZK_CAP_ID].fadingTime(value))
   end
 }
 
@@ -129,7 +130,7 @@ local ZTH05Z_MAP = {
   [19] = { func = function(device, val) log.info(string.format("[%s] 🎯 온도 민감도: %.1f°C", device.label, val/10)) end },
 }
 
-local HOBEIAN_MAP = {
+local ZG204ZK_MAP = {
   [1]   = { func = parsers.presence_complex },
   [106] = { func = parsers.illuminance, factor = 1.0 },
   [121] = { func = parsers.battery },
@@ -141,13 +142,20 @@ local HOBEIAN_MAP = {
 }
 
 local DEVICE_PROFILES = {
-  ["HOBEIAN"] = HOBEIAN_MAP,
+  ["HOBEIAN"] = ZG204ZK_MAP,
   ["_TZE200_rhgsbacq"] = {
     [1] = { func = parsers.presence_complex },
     [106] = { func = parsers.illuminance, factor = 1.0 },
     [111] = { func = parsers.temperature, factor = 10.0 }, -- 투야 온도는 보통 10
     [101] = { func = parsers.humidity, factor = 1.0 },     -- 투야 습도는 보통 1
     [110] = { func = parsers.battery },
+    [102] = { func = parsers.hobeian_fading_time },
+    [2] = { func = parsers.hobeian_static_sens}
+    [108] = PARSER_UNUSED, -- indicator
+    [109] = PARSER_UNUSED, -- temp unit
+    [105] = PARSER_UNUSED, -- temp calibration
+    [104] = PARSER_UNUSED, -- humid calibration
+    [107] = PARSER_UNUSED, -- illuminance interval
   },
   ["_TZE200_yjjdcqsq"] = TEMP_HUMID_MAP,
   ["_TZE204_yjjdcqsq"] = TEMP_HUMID_MAP,
@@ -238,11 +246,46 @@ local function device_init(driver, device)
     log.warn("   ⚠️ 등록된 역량이 없습니다. (프로필 매핑 오류)")
   end
   log.info("==================================================")
+
+  query_device_status(device)
 end
 
 local function info_changed(driver, device, event, args)
   if not device.preferences then return end
-  -- 기존 preferences 처리 로직 유지 (필요 시 작성)
+  local prefs_config = {
+-- [기존 ZG-204ZK 전용]
+    prefIndicator      = { dp = 107, type = tuya_utils.types.BOOL,  factor = 1 },
+    prefStaticDistance = { dp = 4,   type = tuya_utils.types.VALUE, factor = 100 },
+    prefStaticSens     = { dp = 2,   type = tuya_utils.types.VALUE, factor = 1 },
+    prefMotionSens     = { dp = 123, type = tuya_utils.types.VALUE, factor = 1 },
+    prefFadingTime     = { dp = 102, type = tuya_utils.types.VALUE, factor = 1 },
+
+    -- [신규 ZG-204ZV 올인원 전용] (이름 뒤에 ZV를 붙여서 충돌 방지!)
+    prefIndicatorZV    = { dp = 108, type = tuya_utils.types.BOOL,  factor = 1 },
+    prefMotionSensZV   = { dp = 2,   type = tuya_utils.types.VALUE, factor = 1 },
+    prefFadingTimeZV   = { dp = 102, type = tuya_utils.types.VALUE, factor = 1 },
+    prefIllumInterval  = { dp = 107, type = tuya_utils.types.VALUE, factor = 1 },
+    prefTempCalib      = { dp = 105, type = tuya_utils.types.VALUE, factor = 10 }, -- 온도 보정은 보통 10을 곱함
+    prefHumidCalib     = { dp = 104, type = tuya_utils.types.VALUE, factor = 1 }
+  }
+
+  for name, cfg in pairs(prefs_config) do
+    -- 기존 설정값과 새 설정값이 다를 때만 전송 (무한 루프 방지)
+    if device.preferences[name] ~= nil and (args.old_st_store.preferences[name] ~= device.preferences[name]) then
+      local val = device.preferences[name]
+      local send_val
+
+      -- BOOL 타입은 1 또는 0으로, 숫자는 배율(factor) 곱해서 정수화
+      if cfg.type == tuya_utils.types.BOOL then
+        send_val = val and 1 or 0
+      else
+        send_val = math.floor((val * cfg.factor) + 0.5)
+      end
+
+      log.info(string.format("⚙️ [설정 변경 송신] %s -> %d (DP: %d)", name, send_val, cfg.dp))
+      tuya_utils.send_command(device, cfg.dp, cfg.type, send_val)
+    end
+  end
 end
 
 -- ====================================================================
@@ -256,7 +299,7 @@ local tuya_driver = ZigbeeDriver("ad_tuya_driver", {
     capabilities.temperatureMeasurement,
     capabilities.relativeHumidityMeasurement,
     capabilities[TEMP_HUMID_CAP_ID],
-    capabilities[HOBEIAN_CAP_ID],
+    capabilities[ZG204ZK_CAP_ID],
   },
 
   lifecycle_handlers = {
@@ -267,6 +310,8 @@ local tuya_driver = ZigbeeDriver("ad_tuya_driver", {
       query_device_status(device) -- 🌟 새 기기 추가 시 상태 동기화
     end
   },
+
+  capability_handlers = capability_handlers,
 
   zigbee_handlers = {
     attr = {

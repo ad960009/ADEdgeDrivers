@@ -9,3 +9,47 @@ components:
       - id: voicewatch56866.hobeianZg204zk
     categories:
       - name: PresenceSensor
+preferences:
+  - name: "prefIndicator"
+    title: "LED Indicator"
+    description: "Turn the device LED on or off."
+    required: false
+    preferenceType: boolean
+    definition:
+      default: true
+  - name: "prefStaticDistance"
+    title: "Static Detection Distance (m)"
+    description: "Range: 0.00 to 5.00 m"
+    required: false
+    preferenceType: number
+    definition:
+      minimum: 0
+      maximum: 5
+      default: 5
+  - name: "prefStaticSens"
+    title: "Static Detection Sensitivity"
+    description: "Range: 0 to 10"
+    required: false
+    preferenceType: integer
+    definition:
+      minimum: 0
+      maximum: 10
+      default: 7
+  - name: "prefMotionSens"
+    title: "Motion Detection Sensitivity"
+    description: "Range: 0 to 10"
+    required: false
+    preferenceType: integer
+    definition:
+      minimum: 0
+      maximum: 10
+      default: 7
+  - name: "prefFadingTime"
+    title: "Presence Keep Time (sec)"
+    description: "Range: 0 to 28800"
+    required: false
+    preferenceType: integer
+    definition:
+      minimum: 0
+      maximum: 28800
+      default: 60
