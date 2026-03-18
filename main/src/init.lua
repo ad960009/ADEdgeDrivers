@@ -150,7 +150,7 @@ local DEVICE_PROFILES = {
     [101] = { func = parsers.humidity, factor = 1.0 },     -- 투야 습도는 보통 1
     [110] = { func = parsers.battery },
     [102] = { func = parsers.hobeian_fading_time },
-    [2] = { func = parsers.hobeian_static_sens}
+    [2] = { func = parsers.hobeian_static_sens},
     [108] = PARSER_UNUSED, -- indicator
     [109] = PARSER_UNUSED, -- temp unit
     [105] = PARSER_UNUSED, -- temp calibration
