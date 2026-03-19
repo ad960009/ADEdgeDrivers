@@ -10,14 +10,23 @@ local ATTR_MEASURED_VALUE = 0x0000
 
 local TEMP_HUMID_CAP_ID = "voicewatch56866.tempAndHumidity"
 local ZG204ZK_CAP_ID = "voicewatch56866.hobeianZg204zk"
+local ZG204ZV_CAP_ID = "voicewatch56866.hobeianZg204zv"
 
 -- ====================================================================
--- 🌟 전송 래퍼 함수 (init.lua 내부에서 사용)
+-- 🌟 전송 래퍼 함수 (init.lua 내부에서 사용) - 음수 처리 패치 완료!
 -- ====================================================================
 local function send_tuya_command(device, dp_id, dp_type, value)
-  tuya_utils.send_command(device, dp_id, dp_type, value)
+  local send_value = value
+
+  -- VALUE 타입(숫자)이면서 음수일 경우, 32비트 Unsigned(2의 보수) 형태로 강제 변환합니다.
+  if dp_type == tuya_utils.types.VALUE and type(value) == "number" and value < 0 then
+    send_value = value & 0xFFFFFFFF
+  end
+
+  tuya_utils.send_command(device, dp_id, dp_type, send_value)
+
   local device_name = device.label or device.device_network_id or "Unknown"
-  log.info(string.format("[%s] 🚀 DP:%d | Type:%02X | Value:%s", device_name, dp_id, dp_type, tostring(value)))
+  log.info(string.format("[%s] 🚀 DP:%d | Type:%02X | Value:%s (Converted: %s)", device_name, dp_id, dp_type, tostring(value), tostring(send_value)))
 end
 
 local function update_dashboard_text(device)
@@ -48,6 +57,36 @@ local capability_handlers = {
     setFadingTime = function(driver, device, command)
       send_tuya_command(device, 102, tuya_utils.types.VALUE, command.args.value)
     end
+  },
+  [ZG204ZV_CAP_ID] = {
+    setIndicator = function(driver, device, command)
+      local send_val = (command.args.value == "on") and 1 or 0
+      send_tuya_command(device, 108, tuya_utils.types.BOOL, send_val)
+    end,
+    setMotionSensitivity = function(driver, device, command)
+      send_tuya_command(device, 2, tuya_utils.types.VALUE, command.args.value)
+    end,
+    setFadingTime = function(driver, device, command)
+      send_tuya_command(device, 102, tuya_utils.types.VALUE, command.args.value)
+    end,
+    setIlluminanceInterval = function(driver, device, command)
+      send_tuya_command(device, 107, tuya_utils.types.VALUE, command.args.value)
+    end,
+    setTempCalibration = function(driver, device, command)
+      -- UI에서 -1.5 등 소수점 입력 시 10배 곱해서 -15로 전송 (음수 오버플로우는 send_tuya_command에서 처리됨)
+      local send_val = math.floor((command.args.value * 10) + 0.5)
+      if command.args.value < 0 then
+        send_val = math.ceil((command.args.value * 10) - 0.5) -- 음수 반올림 보정
+      end
+      send_tuya_command(device, 105, tuya_utils.types.VALUE, send_val)
+    end,
+    setHumidCalibration = function(driver, device, command)
+      local send_val = math.floor(command.args.value + 0.5)
+      if command.args.value < 0 then
+        send_val = math.ceil(command.args.value - 0.5) -- 음수 반올림 보정
+      end
+      send_tuya_command(device, 104, tuya_utils.types.VALUE, send_val)
+    end
   }
 }
 
@@ -55,7 +94,7 @@ local capability_handlers = {
 -- 📡 2. 파싱 함수 및 DP 매핑 사전 (Device -> UI)
 -- ====================================================================
 local parsers = {
-  -- 공통 파서
+  -- [공통 파서 (presence_complex, illuminance, temperature, humidity, battery 등)는 그대로 유지]
   presence_complex = function(device, value)
     local state = (value == 1 or value == 2 or value == true) and "present" or "not present"
     device:emit_event(capabilities.presenceSensor.presence(state))
@@ -85,23 +124,54 @@ local parsers = {
     device:emit_event(capabilities.battery.battery({value = pct}))
   end,
 
-  -- HOBEIAN 전용 커스텀 파서
-  hobeian_indicator = function(device, value)
+  -- 🌟 [ZG-204ZK 전용 파서]
+  hobeian_indicator_zk = function(device, value)
     local state = (value == 1 or value == true) and "on" or "off"
     device:emit_event(capabilities[ZG204ZK_CAP_ID].indicator(state))
   end,
-  hobeian_static_dist = function(device, value)
+  hobeian_static_dist_zk = function(device, value)
     device:emit_event(capabilities[ZG204ZK_CAP_ID].staticDetectionDistance(value / 100.0))
   end,
-  hobeian_static_sens = function(device, value)
+  hobeian_static_sens_zk = function(device, value)
     device:emit_event(capabilities[ZG204ZK_CAP_ID].staticDetectionSensitivity(value))
   end,
-  hobeian_motion_sens = function(device, value)
+  hobeian_motion_sens_zk = function(device, value)
     device:emit_event(capabilities[ZG204ZK_CAP_ID].motionDetectionSensitivity(value))
   end,
-  hobeian_fading_time = function(device, value)
+  hobeian_fading_time_zk = function(device, value)
     device:emit_event(capabilities[ZG204ZK_CAP_ID].fadingTime(value))
-  end
+  end, -- 👈 콤마 잊지 않기!
+
+  -- 🌟 [ZG-204ZV 전용 파서]
+  hobeian_indicator_zv = function(device, value)
+    local state = (value == 1 or value == true) and "on" or "off"
+    device:emit_event(capabilities[ZG204ZV_CAP_ID].indicator(state))
+  end,
+  hobeian_motion_sens_zv = function(device, value)
+    device:emit_event(capabilities[ZG204ZV_CAP_ID].motionSensitivity(value))
+  end,
+  hobeian_fading_time_zv = function(device, value)
+    device:emit_event(capabilities[ZG204ZV_CAP_ID].fadingTime(value))
+  end,
+  hobeian_illum_interval_zv = function(device, value)
+    device:emit_event(capabilities[ZG204ZV_CAP_ID].illuminanceInterval(value))
+  end,
+  hobeian_temp_calib_zv = function(device, value)
+    -- 기기에서 온 음수(2의 보수)를 다시 마이너스 숫자로 변환 후 UI로 표시
+    local signed_val = value
+    if value > 0x7FFFFFFF then signed_val = value - 0x100000000 end
+    device:emit_event(capabilities[ZG204ZV_CAP_ID].tempCalibration(signed_val / 10.0))
+  end,
+  hobeian_humid_calib_zv = function(device, value)
+    -- 습도 보정도 동일하게 음수 변환 후 UI 표시
+    local signed_val = value
+    if value > 0x7FFFFFFF then signed_val = value - 0x100000000 end
+    device:emit_event(capabilities[ZG204ZV_CAP_ID].humidCalibration(signed_val))
+  end,
+  hobeian_temp_unit_zv = function(device, value)
+    -- UI 속성엔 없지만, 혹시 날아올 경우를 대비해 로그만 남김
+    log.info(string.format("[%s] 🌡️ 온도 단위 수신: %d", device.label, value))
+  end,
 }
 
 local TEMP_HUMID_MAP = {
@@ -134,29 +204,36 @@ local ZG204ZK_MAP = {
   [1]   = { func = parsers.presence_complex },
   [106] = { func = parsers.illuminance, factor = 1.0 },
   [121] = { func = parsers.battery },
-  [107] = { func = parsers.hobeian_indicator },
-  [4]   = { func = parsers.hobeian_static_dist },
-  [2]   = { func = parsers.hobeian_static_sens },
-  [123] = { func = parsers.hobeian_motion_sens },
-  [102] = { func = parsers.hobeian_fading_time },
+  [107] = { func = parsers.hobeian_indicator_zk },
+  [4]   = { func = parsers.hobeian_static_dist_zk },
+  [2]   = { func = parsers.hobeian_static_sens_zk },
+  [123] = { func = parsers.hobeian_motion_sens_zk },
+  [102] = { func = parsers.hobeian_fading_time_zk },
+}
+
+local ZG204ZV_MAP = {
+  [1]   = { func = parsers.presence_complex },
+  [106] = { func = parsers.illuminance, factor = 1.0 },
+  [111] = { func = parsers.temperature, factor = 10.0 }, -- 투야 온도는 보통 10
+  [101] = { func = parsers.humidity, factor = 1.0 },     -- 투야 습도는 보통 1
+  [110] = { func = parsers.battery },
+
+  [102] = { func = parsers.hobeian_fading_time_zv },
+  [2] = { func = parsers.hobeian_static_sens_zv },
+  [108] = { func = parsers.hobeian_indicator_zv }, -- indicator
+  [109] = { func = parsers.hobeian_temp_unit_zv }, -- temp unit
+  [105] = { func = parsers.hobeian_temp_calib_zv }, -- temp calibration
+  [104] = { func = parsers.hobeian_humid_calib_zv }, -- humid calibration
+  [107] = { func = parsers.hobeian_illum_interval_zv }, -- illuminance interval
 }
 
 local DEVICE_PROFILES = {
   ["HOBEIAN"] = ZG204ZK_MAP,
-  ["_TZE200_rhgsbacq"] = {
-    [1] = { func = parsers.presence_complex },
-    [106] = { func = parsers.illuminance, factor = 1.0 },
-    [111] = { func = parsers.temperature, factor = 10.0 }, -- 투야 온도는 보통 10
-    [101] = { func = parsers.humidity, factor = 1.0 },     -- 투야 습도는 보통 1
-    [110] = { func = parsers.battery },
-    [102] = { func = parsers.hobeian_fading_time },
-    [2] = { func = parsers.hobeian_static_sens},
-    [108] = PARSER_UNUSED, -- indicator
-    [109] = PARSER_UNUSED, -- temp unit
-    [105] = PARSER_UNUSED, -- temp calibration
-    [104] = PARSER_UNUSED, -- humid calibration
-    [107] = PARSER_UNUSED, -- illuminance interval
-  },
+  ["_TZE200_rhgsbacq"] = ZG204ZV_MAP,
+  ["_TZE284_rhgsbacq"] = ZG204ZV_MAP,
+  ["_TZE200_9n8j6l7g"] = ZG204ZV_MAP,
+  ["_TZE284_9n8j6l7g"] = ZG204ZV_MAP,
+
   ["_TZE200_yjjdcqsq"] = TEMP_HUMID_MAP,
   ["_TZE204_yjjdcqsq"] = TEMP_HUMID_MAP,
   ["_TZE284_yjjdcqsq"] = TEMP_HUMID_MAP,
@@ -228,7 +305,7 @@ end
 local function device_init(driver, device)
   log.info("==================================================")
   log.info("🟢 기기 로드 완료: " .. (device.label or device.device_network_id))
-  log.info("📋 [현재 기기에 등록된 역량(Capability) 목록]")
+  log.info("📋 [현재 기기 프로필에 등록된 역량 및 캐시된 멤버 확인]")
 
   local has_caps = false
 
@@ -238,6 +315,27 @@ local function device_init(driver, device)
       for cap_id, _ in pairs(component.capabilities or {}) do
         log.info(string.format("   ✔️ [%s] %s", comp_id, cap_id))
         has_caps = true
+
+        -- 🌟 캐시 상태 확인용: 역량 객체 내부 멤버(속성/명령어) 출력
+        local cap_def = capabilities[cap_id]
+        if cap_def then
+          local members = {}
+          for key, val in pairs(cap_def) do
+            -- 내부 메타데이터(대문자 등)나 숨겨진 속성 제외하고 실제 멤버만 추출
+            if type(key) == "string" and not key:match("^_") and key ~= "ID" and key ~= "VERSION" and key ~= "NAME" then
+              table.insert(members, key)
+            end
+          end
+
+          if #members > 0 then
+            table.sort(members)
+            log.info(string.format("      ↳ 로드된 멤버: %s", table.concat(members, ", ")))
+          else
+            log.info("      ↳ 로드된 멤버: (없음 또는 시스템 기본 역량)")
+          end
+        else
+          log.warn("      ↳ ⚠️ 주의: 허브 캐시에 이 역량 정의가 아직 없습니다!")
+        end
       end
     end
   end
@@ -300,6 +398,7 @@ local tuya_driver = ZigbeeDriver("ad_tuya_driver", {
     capabilities.relativeHumidityMeasurement,
     capabilities[TEMP_HUMID_CAP_ID],
     capabilities[ZG204ZK_CAP_ID],
+    capabilities[ZG204ZV_CAP_ID],
   },
 
   lifecycle_handlers = {

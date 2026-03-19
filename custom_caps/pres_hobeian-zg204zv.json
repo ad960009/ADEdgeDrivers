@@ -72,6 +72,22 @@
 				"command": "setIlluminanceInterval",
 				"value": "illuminanceInterval.value"
 			}
+		},
+		{
+			"label": "Temperature Calibration (°C)",
+			"displayType": "numberField",
+			"numberField": {
+				"command": "setTempCalibration",
+				"value": "tempCalibration.value"
+			}
+		},
+		{
+			"label": "Humidity Calibration (%)",
+			"displayType": "numberField",
+			"numberField": {
+				"command": "setHumidCalibration",
+				"value": "humidCalibration.value"
+			}
 		}
 	]
 }

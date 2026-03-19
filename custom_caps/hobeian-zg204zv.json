@@ -66,6 +66,38 @@
 					"value"
 				]
 			}
+		},
+		"tempCalibration": {
+			"schema": {
+				"type": "object",
+				"properties": {
+					"value": {
+						"type": "number",
+						"minimum": -10.0,
+						"maximum": 10.0
+					}
+				},
+				"additionalProperties": false,
+				"required": [
+					"value"
+				]
+			}
+		},
+		"humidCalibration": {
+			"schema": {
+				"type": "object",
+				"properties": {
+					"value": {
+						"type": "number",
+						"minimum": -20,
+						"maximum": 20
+					}
+				},
+				"additionalProperties": false,
+				"required": [
+					"value"
+				]
+			}
 		}
 	},
 	"commands": {
@@ -107,6 +139,28 @@
 			]
 		},
 		"setIlluminanceInterval": {
+			"arguments": [
+				{
+					"name": "value",
+					"optional": false,
+					"schema": {
+						"type": "number"
+					}
+				}
+			]
+		},
+		"setTempCalibration": {
+			"arguments": [
+				{
+					"name": "value",
+					"optional": false,
+					"schema": {
+						"type": "number"
+					}
+				}
+			]
+		},
+		"setHumidCalibration": {
 			"arguments": [
 				{
 					"name": "value",
