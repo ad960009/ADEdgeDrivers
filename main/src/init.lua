@@ -378,10 +378,13 @@ local function info_changed(driver, device, event, args)
         send_val = val and 1 or 0
       else
         send_val = math.floor((val * cfg.factor) + 0.5)
+        if val < 0 then
+          send_val = math.ceil((val * cfg.factor) - 0.5) -- 음수 반올림 안전 보정
+        end
       end
 
-      log.info(string.format("⚙️ [설정 변경 송신] %s -> %d (DP: %d)", name, send_val, cfg.dp))
-      tuya_utils.send_command(device, cfg.dp, cfg.type, send_val)
+      log.info(string.format("⚙️ [설정 변경 송신] %s -> %d(%d) (DP: %d)", name, send_val, val, cfg.dp))
+      send_tuya_command(device, cfg.dp, cfg.type, send_val)
     end
   end
 end
