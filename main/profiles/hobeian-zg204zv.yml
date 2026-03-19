@@ -12,6 +12,8 @@ components:
         version: 1
       - id: illuminanceMeasurement   # 조도
         version: 1
+      - id: voicewatch56866.hobeianZg204zv          # HOBEIAN ZG204ZV 전용 커스텀 능력
+        version: 1
     categories:
       - name: PresenceSensor
 preferences:

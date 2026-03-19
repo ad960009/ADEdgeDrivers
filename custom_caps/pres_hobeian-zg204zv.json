@@ -1,0 +1,77 @@
+{
+	"id": "voicewatch56866.hobeianZg204zv",
+	"version": 1,
+	"dashboard": {
+		"states": [],
+		"actions": []
+	},
+	"detailView": [
+		{
+			"label": "LED Indicator",
+			"displayType": "list",
+			"list": {
+				"command": {
+					"name": "setIndicator",
+					"alternatives": [
+						{
+							"key": "on",
+							"value": "ON",
+							"type": "active"
+						},
+						{
+							"key": "off",
+							"value": "OFF",
+							"type": "inactive"
+						}
+					]
+				},
+				"state": {
+					"value": "indicator.value",
+					"alternatives": [
+						{
+							"key": "on",
+							"value": "ON",
+							"type": "active"
+						},
+						{
+							"key": "off",
+							"value": "OFF",
+							"type": "inactive"
+						}
+					]
+				}
+			}
+		},
+		{
+			"label": "Motion Detection Sensitivity",
+			"displayType": "stepper",
+			"stepper": {
+				"command": {
+					"name": "setMotionSensitivity"
+				},
+				"value": "motionSensitivity.value",
+				"step": 1,
+				"range": [
+					0,
+					19
+				]
+			}
+		},
+		{
+			"label": "Presence Keep Time (sec)",
+			"displayType": "numberField",
+			"numberField": {
+				"command": "setFadingTime",
+				"value": "fadingTime.value"
+			}
+		},
+		{
+			"label": "Illuminance Refresh Interval (min)",
+			"displayType": "numberField",
+			"numberField": {
+				"command": "setIlluminanceInterval",
+				"value": "illuminanceInterval.value"
+			}
+		}
+	]
+}

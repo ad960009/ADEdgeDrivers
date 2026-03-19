@@ -1,0 +1,121 @@
+{
+	"name": "HOBEIAN ZG204ZV",
+	"attributes": {
+		"indicator": {
+			"schema": {
+				"type": "object",
+				"properties": {
+					"value": {
+						"type": "string",
+						"enum": [
+							"on",
+							"off"
+						]
+					}
+				},
+				"additionalProperties": false,
+				"required": [
+					"value"
+				]
+			}
+		},
+		"fadingTime": {
+			"schema": {
+				"type": "object",
+				"properties": {
+					"value": {
+						"type": "number",
+						"minimum": 0,
+						"maximum": 28800
+					}
+				},
+				"additionalProperties": false,
+				"required": [
+					"value"
+				]
+			}
+		},
+		"motionSensitivity": {
+			"schema": {
+				"type": "object",
+				"properties": {
+					"value": {
+						"type": "number",
+						"minimum": 0,
+						"maximum": 19
+					}
+				},
+				"additionalProperties": false,
+				"required": [
+					"value"
+				]
+			}
+		},
+		"illuminanceInterval": {
+			"schema": {
+				"type": "object",
+				"properties": {
+					"value": {
+						"type": "number",
+						"minimum": 1,
+						"maximum": 720
+					}
+				},
+				"additionalProperties": false,
+				"required": [
+					"value"
+				]
+			}
+		}
+	},
+	"commands": {
+		"setIndicator": {
+			"arguments": [
+				{
+					"name": "value",
+					"optional": false,
+					"schema": {
+						"type": "string",
+						"enum": [
+							"on",
+							"off"
+						]
+					}
+				}
+			]
+		},
+		"setFadingTime": {
+			"arguments": [
+				{
+					"name": "value",
+					"optional": false,
+					"schema": {
+						"type": "number"
+					}
+				}
+			]
+		},
+		"setMotionSensitivity": {
+			"arguments": [
+				{
+					"name": "value",
+					"optional": false,
+					"schema": {
+						"type": "number"
+					}
+				}
+			]
+		},
+		"setIlluminanceInterval": {
+			"arguments": [
+				{
+					"name": "value",
+					"optional": false,
+					"schema": {
+						"type": "number"
+					}
+				}
+			]
+		}
+	}
+}
