@@ -72,21 +72,21 @@ local capability_handlers = {
     setIlluminanceInterval = function(driver, device, command)
       send_tuya_command(device, 107, tuya_utils.types.VALUE, command.args.value)
     end,
-    setTempCalibration = function(driver, device, command)
-      -- UI에서 -1.5 등 소수점 입력 시 10배 곱해서 -15로 전송 (음수 오버플로우는 send_tuya_command에서 처리됨)
-      local send_val = math.floor((command.args.value * 10) + 0.5)
-      if command.args.value < 0 then
-        send_val = math.ceil((command.args.value * 10) - 0.5) -- 음수 반올림 보정
-      end
-      send_tuya_command(device, 105, tuya_utils.types.VALUE, send_val)
-    end,
-    setHumidCalibration = function(driver, device, command)
-      local send_val = math.floor(command.args.value + 0.5)
-      if command.args.value < 0 then
-        send_val = math.ceil(command.args.value - 0.5) -- 음수 반올림 보정
-      end
-      send_tuya_command(device, 104, tuya_utils.types.VALUE, send_val)
-    end
+    -- setTempCalibration = function(driver, device, command)
+    --   -- UI에서 -1.5 등 소수점 입력 시 10배 곱해서 -15로 전송 (음수 오버플로우는 send_tuya_command에서 처리됨)
+    --   local send_val = math.floor((command.args.value * 10) + 0.5)
+    --   if command.args.value < 0 then
+    --     send_val = math.ceil((command.args.value * 10) - 0.5) -- 음수 반올림 보정
+    --   end
+    --   send_tuya_command(device, 105, tuya_utils.types.VALUE, send_val)
+    -- end,
+    -- setHumidCalibration = function(driver, device, command)
+    --   local send_val = math.floor(command.args.value + 0.5)
+    --   if command.args.value < 0 then
+    --     send_val = math.ceil(command.args.value - 0.5) -- 음수 반올림 보정
+    --   end
+    --   send_tuya_command(device, 104, tuya_utils.types.VALUE, send_val)
+    -- end
   }
 }
 
@@ -160,13 +160,16 @@ local parsers = {
     -- 기기에서 온 음수(2의 보수)를 다시 마이너스 숫자로 변환 후 UI로 표시
     local signed_val = value
     if value > 0x7FFFFFFF then signed_val = value - 0x100000000 end
-    device:emit_event(capabilities[ZG204ZV_CAP_ID].tempCalibration(signed_val / 10.0))
+    -- device:emit_event(capabilities[ZG204ZV_CAP_ID].tempCalibration(signed_val / 10.0))
+    log.info(string.format("[%s] 🌡️ (설정) 온도 보정값 확인: %.1f", device.label, signed_val/10.0))
   end,
   hobeian_humid_calib_zv = function(device, value)
     -- 습도 보정도 동일하게 음수 변환 후 UI 표시
     local signed_val = value
     if value > 0x7FFFFFFF then signed_val = value - 0x100000000 end
-    device:emit_event(capabilities[ZG204ZV_CAP_ID].humidCalibration(signed_val))
+    -- device:emit_event(capabilities[ZG204ZV_CAP_ID].humidCalibration(signed_val))
+    log.info(string.format("[%s] 💧 (설정) 습도 보정값 확인: %.1f", device.label, signed_val))
+
   end,
   hobeian_temp_unit_zv = function(device, value)
     -- UI 속성엔 없지만, 혹시 날아올 경우를 대비해 로그만 남김

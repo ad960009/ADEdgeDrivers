@@ -62,7 +62,11 @@
 			"displayType": "numberField",
 			"numberField": {
 				"command": "setFadingTime",
-				"value": "fadingTime.value"
+				"value": "fadingTime.value",
+				"range": [
+					0,
+					28800
+				]
 			}
 		},
 		{
@@ -70,23 +74,11 @@
 			"displayType": "numberField",
 			"numberField": {
 				"command": "setIlluminanceInterval",
-				"value": "illuminanceInterval.value"
-			}
-		},
-		{
-			"label": "Temperature Calibration (°C)",
-			"displayType": "numberField",
-			"numberField": {
-				"command": "setTempCalibration",
-				"value": "tempCalibration.value"
-			}
-		},
-		{
-			"label": "Humidity Calibration (%)",
-			"displayType": "numberField",
-			"numberField": {
-				"command": "setHumidCalibration",
-				"value": "humidCalibration.value"
+				"value": "illuminanceInterval.value",
+				"range": [
+					1,
+					720
+				]
 			}
 		}
 	]
